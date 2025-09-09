@@ -1,0 +1,37 @@
+workflows:
+  android-release:
+    name: Build Android Release with Firebase
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      java: 17
+      android:
+        image: default
+    scripts:
+      - name: Ensure project platform folders
+        script: |
+          echo "Running flutter create . to generate android/ios folders if missing"
+          flutter create .
+      - name: Decode google-services.json
+        script: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo $GOOGLE_SERVICES_JSON | base64 --decode > android/app/google-services.json
+            echo "Decoded google-services.json"
+          else
+            echo "GOOGLE_SERVICES_JSON not provided; skipping decode"
+          fi
+      - name: Get dependencies
+        script: flutter pub get
+      - name: Run analyzer
+        script: flutter analyze || true
+      - name: Build APK
+        script: flutter build apk --release
+      - name: Build App Bundle (AAB)
+        script: flutter build appbundle --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/bundle/release/app-release.aab
+    publishing:
+      email:
+        recipients:
+          - youremail@example.com
